@@ -53,7 +53,7 @@ pip install "vocab-dictation[pdf]"     # openpyxl 必需；pdf extra 用于出�
 # 其他 extras：[image] pillow+numpy ｜ [dev] pytest 与全部依赖
 ```
 
-Python ≥ 3.9；不联网、不需要 API Key、不依赖云服务。
+Python ≥ 3.10；不联网、不需要 API Key、不依赖云服务。
 
 ## 五分钟上手
 

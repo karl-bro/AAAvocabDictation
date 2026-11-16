@@ -48,6 +48,11 @@
 - 词库不存在时 `bank.stats` 等直连调用返回 `INTERNAL_ERROR`，现统一映射为 `BANK_NOT_FOUND`。
 - 中文字体按平台回退（Windows / macOS / Linux Noto、文泉驿），
   全都没有时才退回 CID 字体，并在自检中如实反映文本可抽取性。
+- CI 冒烟步骤改为显式 `utf-8-sig` 读回能力清单：Windows runner 的默认 locale
+  无法解码含中文的 UTF-8 JSON，此前三个 Windows 矩阵任务均卡在这一步。
+- CI 动作升级到 `checkout@v5` / `setup-python@v6`，消除 Node 20 弃用告警。
+- Python 支持下限由 3.9 调整为 3.10（3.9 已 EOL，且 `ubuntu-latest` 已无法安装其工具链），
+  矩阵同步改为 3.10 / 3.11 / 3.13。
 
 ### Known limitations
 

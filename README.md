@@ -63,7 +63,7 @@ pip install "vocab-dictation[pdf]"     # openpyxl is required; pdf extra for qui
 # extras: [pdf] reportlab+pymupdf | [image] pillow+numpy | [dev] pytest + all
 ```
 
-Python ≥ 3.9. No network, no API keys, no cloud service.
+Python ≥ 3.10. No network, no API keys, no cloud service.
 
 ## Quickstart
 
