@@ -11,6 +11,7 @@
 """
 import json
 
+from _console import utf8_stdout
 from vocab_dictation import capabilities, dispatch
 
 TOOL_NAME = "vocab_dictation"
@@ -60,6 +61,7 @@ def run_tool_call(tool_call: dict, bank: str | None = None) -> dict:
 
 
 if __name__ == "__main__":
+    utf8_stdout()
     import tempfile
     from pathlib import Path
 

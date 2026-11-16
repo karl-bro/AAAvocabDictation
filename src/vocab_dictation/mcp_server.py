@@ -87,6 +87,13 @@ def handle(msg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def main() -> int:
+    # MCP stdio 通道按规范就是 UTF-8；显式重设，避免宿主 locale（如 Windows cp1252）
+    # 让含中文的响应编码失败、把 JSON-RPC 流写坏。
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+        except (AttributeError, ValueError):
+            pass
     for line in sys.stdin:
         line = line.strip()
         if not line:

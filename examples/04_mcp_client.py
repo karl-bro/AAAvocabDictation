@@ -13,6 +13,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from _console import utf8_stdout
+
 from vocab_dictation import dispatch
 
 REPO = Path(__file__).resolve().parent.parent
@@ -49,6 +51,7 @@ class McpClient:
 
 
 def main() -> None:
+    utf8_stdout()
     work = Path(tempfile.mkdtemp(prefix="vocab-mcp-"))
     bank = work / "词库.xlsx"
     dispatch("bank.init", {"path": str(bank)})

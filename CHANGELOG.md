@@ -53,6 +53,8 @@
 - CI 动作升级到 `checkout@v5` / `setup-python@v6`，消除 Node 20 弃用告警。
 - Python 支持下限由 3.9 调整为 3.10（3.9 已 EOL，且 `ubuntu-latest` 已无法安装其工具链），
   矩阵同步改为 3.10 / 3.11 / 3.13。
+- 示例与 MCP stdio 服务显式使用 UTF-8 输出：Windows / C locale 下打印中文不再
+  `UnicodeEncodeError`，MCP 子进程也不会因编码失败把 JSON-RPC 流写坏。
 
 ### Known limitations
 

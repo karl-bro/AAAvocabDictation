@@ -16,6 +16,7 @@ import json
 import tempfile
 import threading
 import urllib.error
+from _console import utf8_stdout
 import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -47,6 +48,7 @@ def get(base: str, path: str) -> dict:
 
 
 def main() -> None:
+    utf8_stdout()
     work = Path(tempfile.mkdtemp(prefix="vocab-http-"))
     bank = work / "词库.xlsx"
 

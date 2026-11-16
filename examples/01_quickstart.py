@@ -11,6 +11,7 @@ import json
 import tempfile
 from pathlib import Path
 
+from _console import utf8_stdout
 from vocab_dictation import VocabDictation, expand_slash
 
 HERE = Path(__file__).resolve().parent
@@ -19,6 +20,7 @@ DATE = "2026-11-16"
 
 
 def main() -> None:
+    utf8_stdout()
     work = Path(tempfile.mkdtemp(prefix="vocab-demo-"))
     bank = work / "生词词库.xlsx"
     vd = VocabDictation(str(bank), workdir=str(work))
