@@ -55,6 +55,8 @@
   矩阵同步改为 3.10 / 3.11 / 3.13。
 - 示例与 MCP stdio 服务显式使用 UTF-8 输出：Windows / C locale 下打印中文不再
   `UnicodeEncodeError`，MCP 子进程也不会因编码失败把 JSON-RPC 流写坏。
+- 听写卷的「提示」列与图例此前被当成纯文本转义，卷面会印出 `<font size="10">v.</font>`
+  与 `&nbsp;` 源码；现改为富文本渲染，并新增回归测试断言卷面不再泄漏标记。
 
 ### Known limitations
 

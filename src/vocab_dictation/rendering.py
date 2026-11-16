@@ -142,10 +142,22 @@ def _make_styles():
     }
 
 
+def _esc(text: Any) -> str:
+    """把纯文本转成 ReportLab 段落里安全的文本（只转义，不加标记）。"""
+    return (str(text).replace("&", "&amp;").replace("<", "&lt;")
+            .replace(">", "&gt;"))
+
+
 def _paragraph(text: Any, style) -> Any:
+    """纯文本段落：内容一律转义，避免用户数据里的 < & 破坏版式。"""
     from reportlab.platypus import Paragraph
-    return Paragraph(str(text).replace("&", "&amp;").replace("<", "&lt;")
-                     .replace(">", "&gt;"), style)
+    return Paragraph(_esc(text), style)
+
+
+def _rich(markup: str, style) -> Any:
+    """富文本段落：调用方自己保证标记正确，仅用于本文件内的固定版式片段。"""
+    from reportlab.platypus import Paragraph
+    return Paragraph(markup, style)
 
 
 # ---------------- 听写卷 ----------------
@@ -176,7 +188,7 @@ def build_dictation_pdfs(items: Sequence[Mapping[str, Any]], meta: Mapping[str, 
                  ("题号", "提示", "中文释义", "英文（单词 / 词组）")]]
         for i, it in enumerate(items, 1):
             hint = "词组" if it["类型"] == "词组" else (it.get("词性") or "")
-            bits = [f'<font size="10">{hint}</font>']
+            bits = [f'<font size="10">{_esc(hint)}</font>']
             tag = _mark_tag(it.get("标记"))
             if tag:
                 bits.append(f'<font size="8.5">{tag}</font>')
@@ -185,11 +197,11 @@ def build_dictation_pdfs(items: Sequence[Mapping[str, Any]], meta: Mapping[str, 
                 L = prefix_L.get(str(it["中文释义"]), 0)
                 show = "".join(letters[:L + 1])
                 label = f"首字母 {show}" if L == 0 else f"前缀 {show}"
-                bits.append(f'<font size="8.5" color="#7030A0">{label}</font>')
+                bits.append(f'<font size="8.5" color="#7030A0">{_esc(label)}</font>')
             blank = (_paragraph(it["英文"], st["ans"]) if answer
-                     else _paragraph("&nbsp;", st["cell"]))
+                     else _rich("&nbsp;", st["cell"]))
             data.append([_paragraph(str(i), st["cell"]),
-                         _paragraph("<br/>".join(bits), st["hint"]),
+                         _rich("<br/>".join(bits), st["hint"]),
                          _paragraph(it["中文释义"], st["cell"]), blank])
 
         w = A4[0] - 22 * mm
@@ -231,7 +243,7 @@ def build_dictation_pdfs(items: Sequence[Mapping[str, Any]], meta: Mapping[str, 
             Spacer(1, 3 * mm),
             table(answer),
             Spacer(1, 3 * mm),
-            _paragraph(LEGEND, st["meta"]),
+            _rich(LEGEND, st["meta"]),
         ]
         doc.build(story)
         out["answer" if answer else "cloze"] = path
@@ -268,6 +280,8 @@ def verify_dictation_pdfs(items: Sequence[Mapping[str, Any]], meta: Mapping[str,
         missing = expect - nums
         if missing:
             errors.append(f"{kind} 题号缺失: {sorted(missing, key=int)[:10]}")
+        if any(m in text for m in ("<font", "&nbsp;", "<br/>")):
+            errors.append(f"{kind} 富文本标记未解析，卷面出现源码")
         for it in items:
             cn = _norm(it["中文释义"])
             if cn and cn not in flat:
