@@ -67,14 +67,14 @@ def main() -> None:
     (SCHEMAS / "tool.openai.json").write_text(json.dumps(
         {"type": "function",
          "function": {"name": TOOL_NAME, "description": desc, "parameters": params}},
-        ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
 
     (SCHEMAS / "tool.anthropic.json").write_text(json.dumps(
         {"name": TOOL_NAME, "description": desc, "input_schema": params},
-        ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
 
     (SCHEMAS / "capabilities.json").write_text(json.dumps(
-        capabilities(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        capabilities(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
 
     for f in ("tool.openai.json", "tool.anthropic.json", "capabilities.json"):
         print(f"written schemas/{f}")
