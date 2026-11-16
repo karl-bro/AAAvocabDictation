@@ -176,18 +176,43 @@ vocab-dictation/
 ├── schemas/
 │   ├── request.schema.json   # envelope contract
 │   ├── response.schema.json
+│   ├── openapi.json          # HTTP adapter spec (Dify / Coze / any OpenAPI import)
 │   ├── tool.openai.json      # generated: OpenAI function declaration
 │   ├── tool.anthropic.json   # generated: Anthropic tool declaration
 │   └── capabilities.json     # generated: full action catalogue
 ├── prompts/
+│   ├── system_prompt.md      # paste into the system role (any model)
+│   ├── task_prompts.md       # five task templates with expected action sequences
 │   ├── extract_items.md      # notebook photo → items JSON
 │   └── read_submission.md    # answer sheet → graded JSON (verbatim transcription)
 ├── docs/                     # quickstart / api-reference / integration / scoring-rules
+│                             #   install-prompts: per-platform prompt+tool wiring
 ├── examples/                 # 4 runnable examples
 ├── assets/sample_items.json  # 19 public sample entries, no private data
 ├── scripts/export_tool_schemas.py
-└── tests/                    # 76 tests: judge / bank / grading / api / protocols / render / schemas
+└── tests/                    # 77 tests: judge / bank / grading / api / protocols / render / schemas
 ```
+
+## Prompt pack: install it into any app
+
+`prompts/` is a set of contracts, not business logic — scoring, bookkeeping and PDF layout
+always stay in code.
+
+| File | Goes into | What it does |
+| --- | --- | --- |
+| `prompts/system_prompt.md` | the **system** role | role, the 14 actions and when to use them, the flow with its two stop points, error-code → behaviour table, hard rules |
+| `prompts/task_prompts.md` | **user** messages | five task templates, each with the expected action sequence (usable as regression assertions) |
+| `prompts/extract_items.md` | the vision step | notebook photo → `items` array |
+| `prompts/read_submission.md` | the transcription step | handwritten sheet → `graded` array, verbatim |
+
+Per-platform wiring — OpenAI, Claude, Gemini, LangChain, LlamaIndex, Dify, Coze, MCP hosts,
+and any custom backend — lives in [docs/install-prompts.md](docs/install-prompts.md); Dify/Coze
+import `schemas/openapi.json` directly.
+
+Two design choices worth knowing: there is **only one tool** (`vocab_dictation({action, params})`),
+so the model never juggles 14 competing declarations; and the prompt states explicit **stop
+points** (after recognition, after grading preview) so a guessed reading can never be written
+into the bank without the user seeing it first.
 
 ## What the LLM still has to do
 
@@ -205,7 +230,7 @@ That split is the point: vision stays in the model, arithmetic and bookkeeping s
 
 ```bash
 pip install -e ".[dev]"
-pytest            # 76 passed
+pytest            # 77 passed
 ```
 
 Covers scoring boundaries, dedupe, scope filters, shuffle coverage, streak/clear lifecycle,

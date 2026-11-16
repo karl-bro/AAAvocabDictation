@@ -20,7 +20,7 @@ git diff --exit-code schemas/    # 确保生成物与代码同步
 
 ## 提交前的硬性检查
 
-1. `pytest` 全绿（当前 76 个用例）。
+1. `pytest` 全绿（当前 77 个用例）。
 2. 新增动作 → 同时更新 `ACTION_SPECS`、`docs/api-reference.md`、`skill.yaml`；
    CI 会校验 `skill.yaml` 与 `ACTION_SPECS` 的动作集合一致。
 3. 评分规则变更 → 同时改 `core.py`、`docs/scoring-rules.md`、`tests/test_judge.py`，

@@ -75,10 +75,22 @@ def test_envelope_matches_documented_keys(bank):
     assert set(bad["error"]) == {"code", "message", "details"}
 
 
+def test_openapi_matches_actions():
+    api_doc = _load("schemas/openapi.json")
+    assert api_doc["openapi"].startswith("3.")
+    schema = (api_doc["paths"]["/call"]["post"]["requestBody"]["content"]
+              ["application/json"]["schema"])
+    assert set(schema["properties"]["action"]["enum"]) == set(ACTION_SPECS)
+    assert "/health" in api_doc["paths"] and "/capabilities" in api_doc["paths"]
+
+
 def test_readme_links_exist():
     for name in ("README.md", "README.zh-CN.md", "SKILL.md", "skill.yaml", "LICENSE",
                  "CHANGELOG.md", "CONTRIBUTING.md", "docs/quickstart.md",
                  "docs/api-reference.md", "docs/integration.md", "docs/scoring-rules.md",
+                 "docs/install-prompts.md",
+                 "prompts/README.md", "prompts/system_prompt.md", "prompts/task_prompts.md",
                  "prompts/extract_items.md", "prompts/read_submission.md",
+                 "schemas/openapi.json",
                  "assets/sample_items.json", "scripts/export_tool_schemas.py"):
         assert (REPO / name).exists(), name

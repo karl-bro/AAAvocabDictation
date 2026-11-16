@@ -118,9 +118,26 @@ vocabdict mcp                                          # MCP stdio 服务
 ## 仓库结构
 
 README / SKILL.md（Agent 契约）/ skill.yaml（机器可读配置）/ pyproject.toml /
-`src/vocab_dictation/`（11 个模块）/ `schemas/`（请求响应 + 两种工具声明 + 能力清单）/
-`prompts/`（识别两类照片的提示词）/ `docs/` / `examples/` / `assets/sample_items.json` /
-`scripts/export_tool_schemas.py` / `tests/`（76 个用例）。
+`src/vocab_dictation/`（11 个模块）/ `schemas/`（请求响应 + OpenAPI + 两种工具声明 + 能力清单）/
+`prompts/`（系统提示 + 任务模板 + 两类照片的识别契约）/ `docs/` / `examples/` /
+`assets/sample_items.json` / `scripts/export_tool_schemas.py` / `tests/`（77 个用例）。
+
+## 提示词包：装进任何大模型应用
+
+`prompts/` 只放契约，不放业务逻辑——判分、记账、排版永远在代码里。
+
+| 文件 | 放哪里 | 作用 |
+| --- | --- | --- |
+| `prompts/system_prompt.md` | **system** 角色 | 角色、14 个动作及何时用、流程与两个停点、错误码→行为对照、硬规则 |
+| `prompts/task_prompts.md` | **用户**消息 | 五类任务模板，每个都标了期望动作序列，可直接当回归断言 |
+| `prompts/extract_items.md` | 读图那一步 | 生词本照片 → `items` 数组 |
+| `prompts/read_submission.md` | 转写那一步 | 手写答卷 → `graded` 数组，逐字转写 |
+
+各平台（OpenAI / Claude / Gemini / LangChain / LlamaIndex / Dify / Coze / MCP / 自建后端）的接法见
+[docs/install-prompts.md](docs/install-prompts.md)；Dify 与 Coze 直接导入 `schemas/openapi.json`。
+
+两个刻意设计：全局**只有一个工具** `vocab_dictation({action, params})`，模型不用在 14 个声明里挑；
+提示词里写明**两个停点**（识别后核对、批改预览后确认），让"猜出来的识别结果"不可能绕过用户直接入库。
 
 ## 留给模型做的事
 
@@ -136,7 +153,7 @@ README / SKILL.md（Agent 契约）/ skill.yaml（机器可读配置）/ pyproje
 
 ```bash
 pip install -e ".[dev]"
-pytest        # 76 passed
+pytest        # 77 passed
 ```
 
 覆盖评分边界、去重、范围筛选、全量打乱覆盖面、摘帽生命周期、重复批次保护、

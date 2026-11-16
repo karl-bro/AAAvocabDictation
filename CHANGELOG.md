@@ -26,9 +26,16 @@
   结果以 `verify` 返回。
 - **工具声明生成器** `scripts/export_tool_schemas.py`：从代码导出
   OpenAI / Anthropic 工具声明与能力清单，避免 schema 与实现分叉。
+- **提示词包**：`prompts/system_prompt.md`（通用系统提示：动作清单、流程停点、
+  错误码→行为对照、硬规则，附英文精简版）、`prompts/task_prompts.md`（五类任务模板，
+  每个标注期望动作序列）、`prompts/README.md`（安装顺序与设计取舍）。
+- **平台安装手册** `docs/install-prompts.md`：OpenAI / Anthropic / Gemini /
+  LangChain / LlamaIndex / Dify / Coze / MCP 宿主 / 自建后端九种接法，含各自易踩的坑。
+- **OpenAPI 描述** `schemas/openapi.json`：供 Dify、Coze 等直接导入，
+  action 枚举与 `ACTION_SPECS` 由测试守住一致性。
 - **提示词模板**：`prompts/extract_items.md`（生词本照片 → 词条 JSON）、
   `prompts/read_submission.md`（手写答卷 → 逐字答案 JSON）。
-- **76 个测试**：评分边界、去重、范围筛选、摘帽生命周期、错误码、CLI、MCP、HTTP、PDF。
+- **77 个测试**：评分边界、去重、范围筛选、摘帽生命周期、错误码、CLI、MCP、HTTP、PDF。
 
 ### Changed
 

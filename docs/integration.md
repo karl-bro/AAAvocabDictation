@@ -9,6 +9,10 @@
 | 桌面客户端里挂给 Claude/Cursor | `vocabdict mcp` | 一次工具调用 |
 | 自研 Agent 框架 | 任一形态 + `capabilities()` 自省 | — |
 
+> 接完工具只是半成品：模型还需要一套行为约束。系统提示、任务模板与各平台
+> 提示词放置位置见 [install-prompts.md](install-prompts.md)，Dify/Coze 可直接导入
+> `schemas/openapi.json`。
+
 ---
 
 ## 1. OpenAI function calling

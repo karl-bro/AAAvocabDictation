@@ -1,0 +1,205 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "vocab-dictation",
+    "version": "1.0.0",
+    "description": "考研生词本听写闭环的统一 HTTP 接口。所有能力都走 POST /call，返回统一 JSON 信封 {ok, action, version, data, warnings, error, meta}。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8800",
+      "description": "本地默认地址；用 `vocabdict serve --port 8800 --token T` 启动"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/call": {
+      "post": {
+        "operationId": "vocabDictationCall",
+        "summary": "执行一个动作",
+        "description": "把 action 与 params 交给 dispatch，返回统一信封。业务失败返回 HTTP 400，信封结构与成功时相同。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "description": "动作名；先调 GET /capabilities 获取完整清单与参数 Schema",
+                    "enum": [
+                      "skill.capabilities",
+                      "bank.init",
+                      "bank.add_items",
+                      "bank.list_items",
+                      "bank.update_item",
+                      "bank.stats",
+                      "dictation.batch_id",
+                      "dictation.sample",
+                      "dictation.shuffle_all",
+                      "dictation.build_pdf",
+                      "grading.preview",
+                      "grading.apply",
+                      "report.build",
+                      "submission.prepare"
+                    ]
+                  },
+                  "params": {
+                    "type": "object",
+                    "description": "动作参数，结构见 GET /capabilities 中该动作的 input_schema",
+                    "additionalProperties": true
+                  },
+                  "bank": {
+                    "type": "string",
+                    "description": "词库 xlsx 路径；服务启动时已指定则可省略"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "动作执行成功（envelope.ok = true）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "业务失败或 JSON 非法；信封结构与成功时相同，ok=false",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或错误的 Bearer Token"
+          },
+          "413": {
+            "description": "请求体超过 16MB"
+          }
+        }
+      }
+    },
+    "/capabilities": {
+      "get": {
+        "operationId": "vocabDictationCapabilities",
+        "summary": "获取能力清单",
+        "description": "返回全部动作及其参数 JSON Schema，供模型或调用方自省；也可用于生成工具声明。",
+        "responses": {
+          "200": {
+            "description": "能力清单",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "vocabDictationHealth",
+        "summary": "健康检查",
+        "responses": {
+          "200": {
+            "description": "服务存活",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "service": {"type": "string"},
+                    "version": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "可选。启动时传 --token 才校验；请求头 Authorization: Bearer <token>"
+      }
+    },
+    "schemas": {
+      "Envelope": {
+        "type": "object",
+        "required": ["ok", "action", "version", "data", "warnings", "error", "meta"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "action": {"type": "string"},
+          "version": {"type": "string"},
+          "data": {
+            "type": "object",
+            "description": "动作结果；仅 ok=true 时有业务含义",
+            "additionalProperties": true
+          },
+          "warnings": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "error": {
+            "type": "object",
+            "nullable": true,
+            "required": ["code", "message", "details"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "INVALID_ACTION",
+                  "INVALID_PARAMS",
+                  "BANK_REQUIRED",
+                  "BANK_NOT_FOUND",
+                  "BANK_EXISTS",
+                  "DUPLICATE_BATCH",
+                  "BANK_ERROR",
+                  "RENDER_FAILED",
+                  "FILE_NOT_FOUND",
+                  "INTERNAL_ERROR",
+                  "BAD_JSON",
+                  "UNAUTHORIZED",
+                  "NOT_FOUND",
+                  "PAYLOAD_TOO_LARGE"
+                ]
+              },
+              "message": {"type": "string"},
+              "details": {"type": "object", "additionalProperties": true}
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "elapsed_ms": {"type": "number"},
+              "bank": {"type": "string", "nullable": true}
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}
