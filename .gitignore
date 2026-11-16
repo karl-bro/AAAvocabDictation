@@ -1,0 +1,32 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# 虚拟环境
+.venv/
+venv/
+
+# 本地数据（词库与产物不入库）
+*.xlsx
+!assets/*.xlsx
+*.pdf
+!assets/*.pdf
+out/
+tmp/
+
+# 测试与工具缓存
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# 编辑器
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

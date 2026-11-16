@@ -1,0 +1,45 @@
+{
+  "type": "function",
+  "function": {
+    "name": "vocab_dictation",
+    "description": "考研英语生词本听写闭环：把生词本识别结果入库、按错题优先或全量打乱出卷、批改手写答案并按 1/0.5/0 三档评分、维护错题本与两次满分摘帽、生成 PDF 报告。\n返回统一 JSON 信封 {ok, action, version, data, warnings, error, meta}。\n动作清单：\n- skill.capabilities：列出全部可用动作及参数 JSON Schema，供模型自省。\n- bank.init：创建空词库（四张表：使用说明/总词库/错题本/听写记录）。（必填 path；可选 overwrite）\n- bank.add_items：词条入库，自动编号；同来源+序号+英文自动去重。（必填 source,items；可选 date）\n- bank.list_items：按英文/中文、来源、状态、标记、类型筛选词条。（可选 query,source,status,mark,item_type,limit）\n- bank.update_item：就地修改单个词条的可编辑字段（不触碰统计列）。（必填 item_id,fields）\n- bank.stats：词库概览：总量、状态/标记/类型分布、错题、最近批次。\n- dictation.batch_id：按当天已有批次推出下一个批次号 DYYYYMMDD-NN。（可选 date）\n- dictation.sample：错题优先 + 分层随机抽样，返回打乱后的听写顺序。（必填 n；可选 scope,seed,wrong_ratio）\n- dictation.shuffle_all：范围内全量词条打乱，不补词、不优先错题（“全量出卷”）。（可选 scope,seed）\n- dictation.build_pdf：生成听写卷双版本（填空版 + 答案版），返回路径并自检。（必填 items,meta,outdir；可选 prefix）\n- grading.preview：只判分不写库（两步式调用的第一步）。（必填 batch_id,graded；可选 date,scope）\n- grading.apply：正式批改：判分并写回总词库统计、错题本、听写记录（含自动摘帽）。（必填 batch_id,graded；可选 date,scope,note,allow_duplicate）\n- report.build：把批改结果渲染成 PDF 报告并自检。（必填 out；可选 result,result_path）\n- submission.prepare：完成稿照片纠偏、分页、增强（需 image 可选依赖）。（必填 images,outdir）",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "skill.capabilities",
+            "bank.init",
+            "bank.add_items",
+            "bank.list_items",
+            "bank.update_item",
+            "bank.stats",
+            "dictation.batch_id",
+            "dictation.sample",
+            "dictation.shuffle_all",
+            "dictation.build_pdf",
+            "grading.preview",
+            "grading.apply",
+            "report.build",
+            "submission.prepare"
+          ],
+          "description": "要执行的动作，具体参数见 capabilities 的 input_schema"
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "动作参数；除 bank 外的字段都放这里"
+        },
+        "bank": {
+          "type": "string",
+          "description": "词库 xlsx 路径；也可由服务端环境变量 VOCAB_DICTATION_BANK 提供"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

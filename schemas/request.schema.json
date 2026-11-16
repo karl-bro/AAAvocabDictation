@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/karl-bro/AAAvocabDictation/schemas/request.schema.json",
+  "title": "vocab-dictation request",
+  "description": "统一调用入口的请求体。Python SDK 的 dispatch(action, params, bank) 与 HTTP POST /call、MCP tools/call 共用这一结构。",
+  "type": "object",
+  "required": ["action"],
+  "properties": {
+    "action": {
+      "type": "string",
+      "description": "动作名，取值见 capabilities().actions 或 schemas/capabilities.json",
+      "examples": [
+        "bank.init",
+        "bank.add_items",
+        "dictation.sample",
+        "dictation.shuffle_all",
+        "dictation.build_pdf",
+        "grading.preview",
+        "grading.apply",
+        "report.build"
+      ]
+    },
+    "params": {
+      "type": "object",
+      "description": "该动作的参数对象；每个动作的允许字段见 capabilities 中对应 input_schema",
+      "additionalProperties": true,
+      "default": {}
+    },
+    "bank": {
+      "type": "string",
+      "description": "词库 xlsx 路径。可省略：由 SDK 构造参数或服务端环境变量 VOCAB_DICTATION_BANK 提供"
+    }
+  },
+  "additionalProperties": false
+}

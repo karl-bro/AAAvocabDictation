@@ -1,0 +1,412 @@
+{
+  "skill": "vocab-dictation",
+  "version": "1.0.0",
+  "protocol": "json-envelope/v1",
+  "description": "考研生词本听写闭环：识别清单入库、抽样出卷、批改统计、错题摘帽、报告输出。",
+  "actions": [
+    {
+      "action": "skill.capabilities",
+      "summary": "列出全部可用动作及参数 JSON Schema，供模型自省。",
+      "returns": "动作清单",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "bank.init",
+      "summary": "创建空词库（四张表：使用说明/总词库/错题本/听写记录）。",
+      "returns": "path",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "path": {
+            "type": "string",
+            "description": "词库 xlsx 绝对路径"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "default": false,
+            "description": "已存在时是否重建"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "bank.add_items",
+      "summary": "词条入库，自动编号；同来源+序号+英文自动去重。",
+      "returns": "added / skipped / total",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "source": {
+            "type": "string",
+            "description": "来源页标识，如 v.L5-p1"
+          },
+          "date": {
+            "type": "string",
+            "description": "入库日期 YYYY-MM-DD，默认今天"
+          },
+          "items": {
+            "type": "array",
+            "description": "[{序号,类型,英文,词性,中文释义,标记,等号链,备注}]"
+          }
+        },
+        "required": [
+          "source",
+          "items"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "bank.list_items",
+      "summary": "按英文/中文、来源、状态、标记、类型筛选词条。",
+      "returns": "词条数组",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "query": {
+            "type": "string",
+            "description": "英文或中文包含匹配"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "未听写",
+              "学习中",
+              "已掌握"
+            ]
+          },
+          "mark": {
+            "type": "string",
+            "enum": [
+              "普通",
+              "熟词僻义",
+              "重点词"
+            ]
+          },
+          "item_type": {
+            "type": "string",
+            "enum": [
+              "主词",
+              "扩展词",
+              "词组"
+            ]
+          },
+          "limit": {
+            "type": "integer"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "bank.update_item",
+      "summary": "就地修改单个词条的可编辑字段（不触碰统计列）。",
+      "returns": "changed / item",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "item_id": {
+            "type": "string",
+            "description": "词条ID，如 W1287"
+          },
+          "fields": {
+            "type": "object",
+            "description": "可改：英文/中文释义/词性/标记/等号链/备注/状态/类型"
+          }
+        },
+        "required": [
+          "item_id",
+          "fields"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "bank.stats",
+      "summary": "词库概览：总量、状态/标记/类型分布、错题、最近批次。",
+      "returns": "统计对象",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "dictation.batch_id",
+      "summary": "按当天已有批次推出下一个批次号 DYYYYMMDD-NN。",
+      "returns": "批次号字符串",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "date": {
+            "type": "string",
+            "description": "YYYY-MM-DD，默认今天"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "dictation.sample",
+      "summary": "错题优先 + 分层随机抽样，返回打乱后的听写顺序。",
+      "returns": "词条数组（顺序即题号）",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "n": {
+            "type": "integer",
+            "description": "题量"
+          },
+          "scope": {
+            "type": "object",
+            "description": "{来源:[...], 类型:[...], 标记:[...], 序号区间:[lo,hi], 序号集合:[...]}"
+          },
+          "seed": {
+            "type": "integer",
+            "description": "复现用随机种子"
+          },
+          "wrong_ratio": {
+            "type": "number",
+            "default": 0.6,
+            "description": "错题最多占比"
+          }
+        },
+        "required": [
+          "n"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "dictation.shuffle_all",
+      "summary": "范围内全量词条打乱，不补词、不优先错题（“全量出卷”）。",
+      "returns": "词条数组",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "scope": {
+            "type": "object"
+          },
+          "seed": {
+            "type": "integer"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "dictation.build_pdf",
+      "summary": "生成听写卷双版本（填空版 + 答案版），返回路径并自检。",
+      "returns": "cloze / answer / verify",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "items": {
+            "type": "array",
+            "description": "词条数组，顺序即题号"
+          },
+          "meta": {
+            "type": "object",
+            "description": "{批次ID,日期,范围,说明?}"
+          },
+          "outdir": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "文件名前缀，默认 听写_<日期>"
+          }
+        },
+        "required": [
+          "items",
+          "meta",
+          "outdir"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "grading.preview",
+      "summary": "只判分不写库（两步式调用的第一步）。",
+      "returns": "得分/正确率/错因统计/逐题明细",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "batch_id": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "graded": {
+            "type": "array",
+            "description": "[{词条ID,我的答案,override?}]，顺序即题号"
+          }
+        },
+        "required": [
+          "batch_id",
+          "graded"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "grading.apply",
+      "summary": "正式批改：判分并写回总词库统计、错题本、听写记录（含自动摘帽）。",
+      "returns": "同 preview，且 已写入=true",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "batch_id": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "graded": {
+            "type": "array"
+          },
+          "note": {
+            "type": "string"
+          },
+          "allow_duplicate": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "batch_id",
+          "graded"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "report.build",
+      "summary": "把批改结果渲染成 PDF 报告并自检。",
+      "returns": "path / verify",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "result": {
+            "type": "object",
+            "description": "grading.apply/preview 的返回"
+          },
+          "result_path": {
+            "type": "string",
+            "description": "或改为读取 JSON 文件"
+          },
+          "out": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "out"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "action": "submission.prepare",
+      "summary": "完成稿照片纠偏、分页、增强（需 image 可选依赖）。",
+      "returns": "页数/页面/警告",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "词库 xlsx 路径（可省略，取默认或环境变量）"
+          },
+          "images": {
+            "type": "array",
+            "description": "照片路径列表"
+          },
+          "outdir": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "images",
+          "outdir"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

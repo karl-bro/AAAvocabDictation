@@ -1,0 +1,8 @@
+# 统一换行与二进制判定，避免 Windows/macOS/Linux 之间的伪差异
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.pdf binary
+*.xlsx binary
+*.zip binary

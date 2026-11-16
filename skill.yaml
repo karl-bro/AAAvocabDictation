@@ -1,0 +1,135 @@
+# vocab-dictation 技能配置（机器可读）
+# 这份文件描述「技能是什么、从哪进、能吃什么样的输入、吐什么样的输出」，
+# 供编排框架 / 插件市场 / 第三方应用做能力发现。参数级 schema 以
+# schemas/capabilities.json（由代码生成）为准，此处只列动作与必需参数。
+
+name: vocab-dictation
+display_name: 考研生词听写助手
+version: 1.0.0
+license: MIT
+homepage: https://github.com/karl-bro/AAAvocabDictation
+language: zh-CN
+tags:
+  - education
+  - vocabulary
+  - dictation
+  - spaced-repetition
+  - llm-tool
+  - mcp
+
+description: >
+  面向考研英语的生词听写闭环工具：把生词本识别结果结构化入库，按「错题优先」或
+  「全量打乱」出卷并生成填空版/答案版 PDF，批改手写答案（1 / 0.5 / 0 三档），
+  维护总词库统计、错题本与「连续两次满分摘帽」，最后输出批改报告 PDF。
+
+capabilities:
+  - 词库管理（初始化、去重入库、查询、就地改、统计）
+  - 出卷（错题优先抽样 / 全量打乱 / 等号链首字母与前缀提示）
+  - 批改（斜杠同义词任一即对、词组漏词/错序判定、半对计错）
+  - 错题本与摘帽（连续 2 次满分自动摘帽，期间一次失分重新计数）
+  - 报告（PDF 生成 + 自检：页数、题号连续、文本齐全）
+
+entrypoints:
+  python:
+    import: "from vocab_dictation import dispatch, VocabDictation"
+    call: "dispatch(action, params, bank=None) -> dict"
+  cli:
+    command: "vocabdict"
+    subcommands: ["capabilities", "call", "serve", "mcp", "version"]
+  http:
+    start: "vocabdict serve --host 127.0.0.1 --port 8800"
+    routes:
+      - "POST /call"
+      - "GET /capabilities"
+      - "GET /health"
+    auth: "可选 Bearer Token（--token 或 VOCAB_DICTATION_TOKEN）"
+  mcp:
+    start: "vocabdict mcp"
+    transport: "stdio"
+    protocol: "2024-11-05"
+    tools: ["vocab_dictation"]
+
+actions:
+  - name: skill.capabilities
+  - name: bank.init
+    requires: [path]
+  - name: bank.add_items
+    requires: [source, items]
+  - name: bank.list_items
+  - name: bank.update_item
+    requires: [item_id, fields]
+  - name: bank.stats
+  - name: dictation.batch_id
+  - name: dictation.sample
+    requires: [n]
+  - name: dictation.shuffle_all
+  - name: dictation.build_pdf
+    requires: [items, meta, outdir]
+  - name: grading.preview
+    requires: [batch_id, graded]
+  - name: grading.apply
+    requires: [batch_id, graded]
+  - name: report.build
+    requires: [out]
+  - name: submission.prepare
+    requires: [images, outdir]
+
+io:
+  request:
+    schema: schemas/request.schema.json
+    shape: "{action: string, params: object, bank?: string}"
+  response:
+    schema: schemas/response.schema.json
+    shape: "{ok, action, version, data, warnings, error, meta}"
+    error_codes:
+      - INVALID_ACTION
+      - INVALID_PARAMS
+      - BANK_REQUIRED
+      - BANK_NOT_FOUND
+      - BANK_EXISTS
+      - DUPLICATE_BATCH
+      - BANK_ERROR
+      - RENDER_FAILED
+      - FILE_NOT_FOUND
+      - INTERNAL_ERROR
+  tool_declarations:
+    openai: schemas/tool.openai.json
+    anthropic: schemas/tool.anthropic.json
+  prompts:
+    extract_items: prompts/extract_items.md
+    read_submission: prompts/read_submission.md
+
+data:
+  storage: "单个 xlsx 工作簿，四张工作表"
+  sheets:
+    - 使用说明
+    - 总词库
+    - 错题本
+    - 听写记录
+  key_columns:
+    总词库: [词条ID, 来源, 序号, 类型, 英文, 词性, 中文释义, 标记, 状态,
+            听写次数, 正确次数, 错误次数, 连续正确, 最近听写日期, 入库日期, 备注, 等号链]
+    错题本: [错题ID, 词条ID, 英文, 中文释义, 标记, 批次ID, 听写日期, 错误类型,
+            我的答案, 正确答案, 状态, 连续正确, 摘帽日期]
+    听写记录: [批次ID, 日期, 范围/来源, 抽查数量, 得分, 正确率, 错题数,
+              重点题数, 重点正确数, 备注]
+
+scoring:
+  reference: docs/scoring-rules.md
+  full_mark: "拼写完全正确，或斜杠同义词任一正确"
+  half_mark: "单词错 1~2 字母且可辨认（3~4 字母短词只容错 1 个）"
+  zero_mark: "偏差大 / 未作答 / 词组漏词 / 词组多词 / 词组错序"
+  half_marks_count_as_error: true
+  clear_rule: "错题连续 2 次得 1 分摘帽；期间任一次未满分则计数清零"
+
+dependencies:
+  required: [openpyxl]
+  extras:
+    pdf: [reportlab, pymupdf]
+    image: [pillow, numpy]
+  python: ">=3.9"
+
+limits:
+  - "不负责拍照与 OCR 本身：识别由调用方的大模型完成，本技能提供提示词模板与结构化契约"
+  - "不负责印刷与设备：输出 PDF 文件，由调用方决定打印方式"
+  - "词库为单文件 xlsx，未做多人并发写保护；并发写请自行串行化"

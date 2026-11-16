@@ -1,0 +1,6 @@
+# 运行时最小依赖
+openpyxl>=3.1
+
+# 若需出卷/报告（PDF）
+# reportlab>=4.0
+# pymupdf>=1.23

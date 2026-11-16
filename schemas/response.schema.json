@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/karl-bro/AAAvocabDictation/schemas/response.schema.json",
+  "title": "vocab-dictation response envelope",
+  "description": "所有动作（成功与失败）都返回同一信封结构，调用方只需判断 ok 与 error.code。",
+  "type": "object",
+  "required": ["ok", "action", "version", "data", "warnings", "error", "meta"],
+  "properties": {
+    "ok": {"type": "boolean", "description": "是否成功；false 时 error 必不为空"},
+    "action": {"type": "string"},
+    "version": {"type": "string", "description": "技能版本号"},
+    "data": {
+      "description": "动作返回值；ok=false 时为 null。结构见 capabilities 的 returns 字段",
+      "oneOf": [
+        {"type": "null"},
+        {"type": "object"},
+        {"type": "array"},
+        {"type": "string"},
+        {"type": "number"},
+        {"type": "boolean"}
+      ]
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "不阻断流程的提示，例如去重跳过条数、自检异常、图像分辨率偏低"
+    },
+    "error": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_ACTION",
+                "INVALID_PARAMS",
+                "BANK_REQUIRED",
+                "BANK_NOT_FOUND",
+                "BANK_EXISTS",
+                "DUPLICATE_BATCH",
+                "BANK_ERROR",
+                "RENDER_FAILED",
+                "FILE_NOT_FOUND",
+                "INTERNAL_ERROR",
+                "BAD_JSON",
+                "UNAUTHORIZED",
+                "NOT_FOUND",
+                "PAYLOAD_TOO_LARGE"
+              ],
+              "description": "机器可判定的错误码；前 10 个由核心接口产生，其余由 HTTP 适配层产生"
+            },
+            "message": {"type": "string", "description": "面向人的说明，可直接展示"},
+            "details": {"type": "object", "description": "结构化上下文，如 missing 字段、available 动作列表"}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "elapsed_ms": {"type": "integer", "description": "本次调用耗时"},
+        "bank": {"type": ["string", "null"], "description": "实际使用的词库路径"}
+      },
+      "required": ["elapsed_ms"],
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
